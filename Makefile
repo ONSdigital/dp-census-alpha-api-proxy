@@ -1,7 +1,7 @@
 BINPATH ?= build
 AUTH_TOKEN ?=
-FTB_URL ?= http://localhost:10100/v6
-PORT=8080
+FTB_URL ?= http://localhost:8491/v6
+PORT=10100
 
 .PHONY: build
 build:
@@ -17,7 +17,7 @@ test:
 	go test -race -cover ./...
 
 ping:
-	curl -i -H "Authorization: Bearer abc123" "http://localhost:${PORT}/v6/datasets"
+	curl -i -H "Authorization: Bearer ${AUTH_TOKEN}" "http://localhost:${PORT}/v6/datasets"
 
 .PHONY: convey
 convey:
