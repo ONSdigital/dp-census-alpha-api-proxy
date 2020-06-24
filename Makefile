@@ -10,7 +10,7 @@ build:
 .PHONY: debug
 debug:
 	go build -tags 'debug' -o $(BINPATH)/dp-census-alpha-api-proxy
-	HUMAN_LOG=1 DEBUG=1 PORT=$(PORT) AUTH_TOKEN=$(AUTH_TOKEN) FTB_URL=$(FTB_URL) $(BINPATH)/dp-census-alpha-api-proxy
+	HUMAN_LOG=1 DEBUG=1 BIND_ADDR=$(PORT) AUTH_TOKEN=$(AUTH_TOKEN) FTB_URL=$(FTB_URL) $(BINPATH)/dp-census-alpha-api-proxy
 
 .PHONY: test
 test:
