@@ -1,16 +1,17 @@
 package config
 
 import (
+	"errors"
+	"strings"
+
 	"github.com/kelseyhightower/envconfig"
-	"time"
 )
 
 // Config represents service configuration for dp-census-alpha-api-proxy
 type Config struct {
-	BindAddr                   string        `envconfig:"BIND_ADDR"`
-	GracefulShutdownTimeout    time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
-	HealthCheckInterval        time.Duration `envconfig:"HEALTHCHECK_INTERVAL"`
-	HealthCheckCriticalTimeout time.Duration `envconfig:"HEALTHCHECK_CRITICAL_TIMEOUT"`
+	BindAddr                string `envconfig:"BIND_ADDR"`
+	AuthToken               string `envconfig:"AUTH_TOKEN" json:"-"`
+	FlexibleTableBuilderURL string `envconfig:"FTB_URL"`
 }
 
 var cfg *Config
@@ -23,11 +24,26 @@ func Get() (*Config, error) {
 	}
 
 	cfg := &Config{
-		BindAddr:                   ":",
-		GracefulShutdownTimeout:    5 * time.Second,
-		HealthCheckInterval:        30 * time.Second,
-		HealthCheckCriticalTimeout: 90 * time.Second,
+		BindAddr:                ":8080",
+		AuthToken:               "",
+		FlexibleTableBuilderURL: "http://localhost:8491/v6",
 	}
 
-	return cfg, envconfig.Process("", cfg)
+	err := envconfig.Process("", cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(cfg.AuthToken) == 0 {
+		return nil, errors.New("auth token cannot be empty")
+	}
+
+	return cfg, nil
+}
+
+func (c *Config) GetAuthToken() string {
+	if !strings.HasPrefix("Bearer ", c.AuthToken) {
+		c.AuthToken = "Bearer " + c.AuthToken
+	}
+	return c.AuthToken
 }

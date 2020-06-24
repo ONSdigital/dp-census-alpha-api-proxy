@@ -1,7 +1,0 @@
-FROM onsdigital/dp-concourse-tools-ubuntu
-
-WORKDIR /app/
-
-COPY dp-census-alpha-api-proxy .
-
-CMD ./dp-census-alpha-api-proxy
