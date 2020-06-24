@@ -10,3 +10,6 @@
 .idea/
 *.iml
 *.iws
+
+token.txt
+build/

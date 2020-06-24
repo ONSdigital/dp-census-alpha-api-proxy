@@ -1,25 +1,19 @@
 package main
 
 import (
-	"context"
+	"net/http"
 	"os"
-	"os/signal"
 
-	"github.com/ONSdigital/dp-census-alpha-api-proxy/service"
+	"github.com/ONSdigital/dp-census-alpha-api-proxy/api"
+	"github.com/ONSdigital/dp-census-alpha-api-proxy/auth"
+	"github.com/ONSdigital/dp-census-alpha-api-proxy/config"
+	"github.com/ONSdigital/dp-census-alpha-api-proxy/ftb"
+	dphttp "github.com/ONSdigital/dp-net/http"
 	"github.com/ONSdigital/log.go/log"
-	"github.com/pkg/errors"
+	"github.com/gorilla/mux"
 )
 
 const serviceName = "dp-census-alpha-api-proxy"
-
-var (
-	// BuildTime represents the time in which the service was built
-	BuildTime string
-	// GitCommit represents the commit (SHA-1) hash of the service that is running
-	GitCommit string
-	// Version represents the version of the service that is running
-	Version string
-)
 
 func main() {
 	log.Namespace = serviceName
@@ -31,23 +25,22 @@ func main() {
 }
 
 func run() error {
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt, os.Kill)
-
-	svcErrors := make(chan error, 1)
-	svc, err := service.Run(BuildTime, GitCommit, Version, svcErrors)
+	cfg, err := config.Get()
 	if err != nil {
-		return errors.Wrap(err, "running service failed")
+		return err
 	}
 
-	// blocks until an os interrupt or a fatal error occurs
-	select {
-	case err := <-svcErrors:
-		return errors.Wrap(err, "service error received")
-	case sig := <-signals:
-		ctx := context.Background()
-		log.Event(ctx, "os signal received", log.Data{"signal": sig}, log.INFO)
-		svc.Close(ctx)
+	log.Event(nil, "application configuration", log.INFO, log.Data{"values": cfg})
+
+	ftbCli := &ftb.Client{
+		Host:    cfg.FlexibleTableBuilderURL,
+		HttpCli: dphttp.NewClient(),
 	}
-	return nil
+
+	r := mux.NewRouter()
+
+	api.Setup(nil, r, auth.Handler(cfg.GetAuthToken()), ftbCli)
+
+	log.Event(nil, "starting ftb proxy api", log.INFO, log.Data{"port": cfg.BindAddr})
+	return http.ListenAndServe(cfg.BindAddr, r)
 }
