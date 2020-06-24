@@ -1,6 +1,6 @@
 BINPATH ?= build
 AUTH_TOKEN ?=
-FTB_URL ?= http://localhost:8491/v6
+FTB_URL ?= http://localhost:8491
 PORT=10100
 
 .PHONY: build

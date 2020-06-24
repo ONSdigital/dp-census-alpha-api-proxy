@@ -33,7 +33,7 @@ func run() error {
 	log.Event(nil, "application configuration", log.INFO, log.Data{"values": cfg})
 
 	ftbCli := &ftb.Client{
-		URL:     cfg.FlexibleTableBuilderURL,
+		Host:    cfg.FlexibleTableBuilderURL,
 		HttpCli: dphttp.NewClient(),
 	}
 

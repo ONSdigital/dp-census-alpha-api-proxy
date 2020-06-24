@@ -26,7 +26,7 @@ func Get() (*Config, error) {
 	cfg := &Config{
 		BindAddr:                ":8080",
 		AuthToken:               "",
-		FlexibleTableBuilderURL: "http://localhost:8491/v6",
+		FlexibleTableBuilderURL: "http://localhost:8491",
 	}
 
 	err := envconfig.Process("", cfg)

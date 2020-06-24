@@ -3,19 +3,25 @@ package ftb
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"net/http"
 
 	dphttp "github.com/ONSdigital/dp-net/http"
+	"github.com/ONSdigital/log.go/log"
 )
 
 type Client struct {
-	URL     string
+	Host    string
 	HttpCli dphttp.Clienter
 }
 
-func (c *Client) GetDatasets(ctx context.Context) (*Datasets, error) {
-	outReq, err := http.NewRequest("GET", c.URL+"/datasets", nil)
+type Entity interface{}
+
+func (c *Client) GetData(ctx context.Context, url string) (Entity, error) {
+	queryURL :=  c.Host+url
+	log.Event(ctx, "making request to FTB API", log.INFO, log.Data{"url": queryURL})
+
+	outReq, err := http.NewRequest("GET", queryURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -28,13 +34,13 @@ func (c *Client) GetDatasets(ctx context.Context) (*Datasets, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, errors.New("incorrect status code returned from ftb api")
+		return nil, fmt.Errorf("incorrect status code returned from ftb api expected 200 but was %d", resp.StatusCode)
 	}
 
-	var datasets []*Dataset
-	if err := json.NewDecoder(resp.Body).Decode(&datasets); err != nil {
+	var entity interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&entity); err != nil {
 		return nil, err
 	}
 
-	return &Datasets{Items: datasets}, nil
+	return entity, nil
 }
