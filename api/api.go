@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type simpleMessage struct {
+type SimpleEntity struct {
 	Message string
 }
 
@@ -39,40 +39,27 @@ func (a *API) Handle(ftb FlexibleTableBuilder) http.HandlerFunc {
 
 		entity, err := ftb.GetData(ctx, url)
 		if err != nil {
-			errorResponse(w, err.Error(), http.StatusInternalServerError)
+			WriteBody(ctx, w, SimpleEntity{Message: err.Error()}, http.StatusInternalServerError)
 			return
 		}
 
-		writeBody(ctx, w, entity)
+		WriteBody(ctx, w, entity, http.StatusOK)
 	}
 }
 
-func errorResponse(w http.ResponseWriter, msg string, status int) {
-	b, err := json.Marshal(simpleMessage{Message: msg})
-	if err != nil {
-		msg = "internal server error"
-		status = http.StatusInternalServerError
-	}
+func WriteBody(ctx context.Context, w http.ResponseWriter, entity interface{}, status int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
 
-	log.Event(nil, msg, log.ERROR, log.Data{"status": status})
-	http.Error(w, string(b), status)
+	err := json.NewEncoder(w).Encode(entity)
+	if err != nil {
+		log.Event(ctx, "failed to write entity to response body", log.Error(err), log.ERROR)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (*API) Close(ctx context.Context) error {
 	// Close any dependencies
 	log.Event(ctx, "graceful shutdown of api complete", log.INFO)
 	return nil
-}
-
-func writeBody(ctx context.Context, w http.ResponseWriter, entity ftb.Entity) {
-	w.Header().Set("Content-Type", "application/json")
-
-	err := json.NewEncoder(w).Encode(entity)
-	if err != nil {
-		log.Event(ctx, "failed to write entity to response body", log.Error(err), log.ERROR)
-		errorResponse(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	log.Event(ctx, "get datasets request successful", log.INFO)
 }

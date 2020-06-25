@@ -1,24 +1,15 @@
 package auth
 
 import (
-	"encoding/json"
 	"net/http"
 
+	"github.com/ONSdigital/dp-census-alpha-api-proxy/api"
 	"github.com/ONSdigital/log.go/log"
 )
 
 const (
-	authHeader   = "Authorization"
+	authHeader = "Authorization"
 )
-
-var (
-	unauthorizedJson, _ = json.Marshal(simpleMessage{"unauthorized"})
-	unauthorizedStr     = string(unauthorizedJson)
-)
-
-type simpleMessage struct {
-	Message string
-}
 
 func Handler(token string) func(http.HandlerFunc) http.HandlerFunc {
 
@@ -28,14 +19,14 @@ func Handler(token string) func(http.HandlerFunc) http.HandlerFunc {
 			callerToken := r.Header.Get(authHeader)
 
 			if len(callerToken) == 0 {
-				log.Event(ctx, "unauthorized no token provided", log.ERROR)
-				http.Error(w, unauthorizedStr, http.StatusUnauthorized)
+				log.Event(ctx, "unauthorized no token provided", log.INFO)
+				api.WriteBody(ctx, w, api.SimpleEntity{Message: "unauthorized no token provided"}, http.StatusUnauthorized)
 				return
 			}
 
 			if token != callerToken {
-				log.Event(ctx, "unauthorized incorrect token provided", log.ERROR)
-				http.Error(w, unauthorizedStr, http.StatusForbidden)
+				log.Event(ctx, "unauthorized incorrect token provided", log.INFO)
+				api.WriteBody(ctx, w, api.SimpleEntity{Message: "unauthorized incorrect token provided"}, http.StatusUnauthorized)
 				return
 			}
 

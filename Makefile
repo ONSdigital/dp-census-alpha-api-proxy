@@ -1,25 +1,48 @@
 BINPATH ?= build
-AUTH_TOKEN ?=
-FTB_URL ?= http://localhost:8491
-PORT=10100
+
+BIND_ADDR=10100
+AUTH_TOKEN=
+FTB_URL=http://localhost:8491
+
+containerName=alpha-api-proxy
+binary-name=dp-census-alpha-api-proxy
 
 .PHONY: build
 build:
-	go build -tags 'production' -o $(BINPATH)/dp-census-alpha-api-proxy
+	go build -tags 'production' -o $(BINPATH)/${binary-name}
 
 .PHONY: debug
 debug:
-	go build -tags 'debug' -o $(BINPATH)/dp-census-alpha-api-proxy
-	HUMAN_LOG=1 DEBUG=1 BIND_ADDR=:$(PORT) AUTH_TOKEN=$(AUTH_TOKEN) FTB_URL=$(FTB_URL) $(BINPATH)/dp-census-alpha-api-proxy
-
-.PHONY: test
-test:
-	go test -race -cover ./...
+	go build -tags 'debug' -o $(BINPATH)/${binary-name}
+	HUMAN_LOG=1 DEBUG=1 BIND_ADDR=:$(BIND_ADDR) AUTH_TOKEN=$(AUTH_TOKEN) FTB_URL=$(FTB_URL) $(BINPATH)/${binary-name}
 
 ping:
-	curl -i -H "Authorization: Bearer ${AUTH_TOKEN}" "http://localhost:${PORT}/v6/datasets"
+	curl -i -H "Authorization: Bearer ${AUTH_TOKEN}" "http://localhost:${BIND_ADDR}/v6/datasets"
 
-.PHONY: convey
-convey:
-	goconvey ./...
+.PHONY: container
+container:
+	@echo "stopping ${containerName} container"
+	docker stop ${containerName} || true
+
+	@echo "removing ${containerName} container"
+	docker rm ${containerName} || true
+
+	@echo "removing ${containerName} image"
+	docker rmi ${containerName} || true
+
+	@echo "building ${binary-name}-linux binary"
+	env GOOS=linux GOARCH=amd64 go build -o $(BINPATH)/${binary-name}-linux
+
+	@echo "building ${containerName}  container"
+	docker build -t ${containerName} -f Dockerfile.ec2 \
+		--build-arg BIND_ADDR=${BIND_ADDR} \
+		--build-arg AUTH_TOKEN=${AUTH_TOKEN} \
+		--build-arg FTB_URL=${FTB_URL} .
+
+.PHONY: docker
+docker: container
+	docker run -it \
+		--name ${containerName} \
+		-p 0.0.0.0:${BIND_ADDR}:${BIND_ADDR} \
+		${containerName}
 
