@@ -12,7 +12,6 @@ ENV BIND_ADDR :${BIND_ADDR}
 ENV AUTH_TOKEN ${AUTH_TOKEN}
 ENV FTB_URL ${FTB_URL}
 
-COPY build/dp-census-alpha-api-proxy-linux /app/
+COPY build/dp-census-alpha-api-proxy /app/
 
-CMD ./dp-census-alpha-api-proxy-linux
-#ENTRYPOINT echo "BIND_ADDR: $BIND_ADDR AUTH_TOKEN: $AUTH_TOKEN FTB_URL: $FTB_URL"
+CMD ./dp-census-alpha-api-proxy
