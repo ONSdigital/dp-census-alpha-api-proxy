@@ -1,7 +1,7 @@
 BINPATH ?= build
 
 BIND_ADDR=10100
-AUTH_TOKEN=699a5dda-bbf1-47e0-a9df-b3bb370f7b8d
+AUTH_TOKEN=
 FTB_URL=http://localhost:8491
 
 containerName=alpha-api-proxy
