@@ -18,8 +18,9 @@ type Client struct {
 type Entity interface{}
 
 func (c *Client) GetData(ctx context.Context, url string) (Entity, error) {
-	queryURL :=  c.Host+url
-	log.Event(ctx, "making request to FTB API", log.INFO, log.Data{"url": queryURL})
+	queryURL := c.Host + url
+	logD := log.Data{"url": queryURL}
+	log.Event(ctx, "making request to FTB API", log.INFO, logD)
 
 	outReq, err := http.NewRequest("GET", queryURL, nil)
 	if err != nil {
@@ -36,6 +37,9 @@ func (c *Client) GetData(ctx context.Context, url string) (Entity, error) {
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("incorrect status code returned from ftb api expected 200 but was %d", resp.StatusCode)
 	}
+
+	logD["status"] = resp.StatusCode
+	log.Event(ctx, "flexible table builder returned successful response", log.INFO, logD)
 
 	var entity interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&entity); err != nil {

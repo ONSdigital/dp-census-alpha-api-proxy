@@ -29,6 +29,7 @@ func Setup(ctx context.Context, r *mux.Router, authCheck Authenticator, ftb Flex
 	api := &API{Router: r}
 
 	r.PathPrefix("/v6/datasets").HandlerFunc(authCheck(api.Handle(ftb))).Methods("GET")
+	r.PathPrefix("/v6/codebook").HandlerFunc(authCheck(api.Handle(ftb))).Methods("GET")
 	return api
 }
 
@@ -48,6 +49,7 @@ func (a *API) Handle(ftb FlexibleTableBuilder) http.HandlerFunc {
 }
 
 func WriteBody(ctx context.Context, w http.ResponseWriter, entity interface{}, status int) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 

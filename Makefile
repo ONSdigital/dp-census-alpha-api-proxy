@@ -1,7 +1,7 @@
 BINPATH ?= build
 
 BIND_ADDR=10100
-AUTH_TOKEN=
+AUTH_TOKEN=699a5dda-bbf1-47e0-a9df-b3bb370f7b8d
 FTB_URL=http://localhost:8491
 
 containerName=alpha-api-proxy
@@ -16,6 +16,7 @@ debug:
 	go build -tags 'debug' -o $(BINPATH)/${binary-name}
 	HUMAN_LOG=1 DEBUG=1 BIND_ADDR=:$(BIND_ADDR) AUTH_TOKEN=$(AUTH_TOKEN) FTB_URL=$(FTB_URL) $(BINPATH)/${binary-name}
 
+.PHONY: ping
 ping:
 	curl -i -H "Authorization: Bearer ${AUTH_TOKEN}" "http://localhost:${BIND_ADDR}/v6/datasets"
 
