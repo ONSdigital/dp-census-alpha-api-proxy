@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/ONSdigital/dp-census-alpha-api-proxy/ftb"
@@ -30,22 +31,37 @@ func Setup(ctx context.Context, r *mux.Router, authCheck Authenticator, ftb Flex
 
 	r.PathPrefix("/v6/datasets").HandlerFunc(authCheck(api.Handle(ftb))).Methods("GET")
 	r.PathPrefix("/v6/codebook").HandlerFunc(authCheck(api.Handle(ftb))).Methods("GET")
+	r.PathPrefix("/v6/query").HandlerFunc(authCheck(api.Handle(ftb))).Methods("GET")
 	return api
 }
 
-func (a *API) Handle(ftb FlexibleTableBuilder) http.HandlerFunc {
+func (a *API) Handle(client FlexibleTableBuilder) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		url := r.URL.String()
 
-		entity, err := ftb.GetData(ctx, url)
+		entity, err := client.GetData(ctx, url)
 		if err != nil {
-			WriteBody(ctx, w, SimpleEntity{Message: err.Error()}, http.StatusInternalServerError)
+			errEntity, status := getErrorResponse(err)
+			WriteBody(ctx, w, errEntity, status)
 			return
 		}
 
 		WriteBody(ctx, w, entity, http.StatusOK)
 	}
+}
+
+func getErrorResponse(err error) (SimpleEntity, int) {
+	status := http.StatusInternalServerError
+	msg := "internal server error"
+
+	var ftbErr ftb.Error
+	if errors.As(err, &ftbErr) {
+		status = ftbErr.StatusCode
+		msg = ftbErr.Message
+	}
+
+	return SimpleEntity{Message: msg}, status
 }
 
 func WriteBody(ctx context.Context, w http.ResponseWriter, entity interface{}, status int) {

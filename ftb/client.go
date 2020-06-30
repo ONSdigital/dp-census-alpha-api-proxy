@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	dphttp "github.com/ONSdigital/dp-net/http"
@@ -13,6 +14,11 @@ import (
 type Client struct {
 	Host    string
 	HttpCli dphttp.Clienter
+}
+
+type Error struct {
+	StatusCode int
+	Message    string
 }
 
 type Entity interface{}
@@ -35,7 +41,7 @@ func (c *Client) GetData(ctx context.Context, url string) (Entity, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("incorrect status code returned from ftb api expected 200 but was %d", resp.StatusCode)
+		return nil, handleErrorResponse(resp)
 	}
 
 	logD["status"] = resp.StatusCode
@@ -47,4 +53,26 @@ func (c *Client) GetData(ctx context.Context, url string) (Entity, error) {
 	}
 
 	return entity, nil
+}
+
+func handleErrorResponse(resp *http.Response) error {
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(b))
+
+	status := http.StatusInternalServerError
+	message := "internal server error"
+
+	if resp.StatusCode > 399 && resp.StatusCode  < 500 {
+		status = resp.StatusCode
+		message = string(b)
+	}
+	return Error{StatusCode: status, Message: message}
+}
+
+func (e Error) Error() string {
+	return e.Message
 }

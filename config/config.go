@@ -24,7 +24,7 @@ func Get() (*Config, error) {
 	}
 
 	cfg := &Config{
-		BindAddr:                ":8080",
+		BindAddr:                ":10100",
 		AuthToken:               "",
 		FlexibleTableBuilderURL: "http://localhost:8491",
 	}
