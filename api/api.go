@@ -27,30 +27,43 @@ type FTBClient interface {
 
 type Authenticator func(http.Handler) http.Handler
 
-func Setup(ctx context.Context, r *mux.Router, client FTBClient) *API {
+func Setup(ctx context.Context, r *mux.Router, auth Authenticator, client FTBClient) *API {
 	api := &API{
 		Client: client,
 		Router: r,
 	}
 
-	r.PathPrefix("/v6/datasets").HandlerFunc(api.Handle).Methods(http.MethodGet, http.MethodOptions)
-	r.PathPrefix("/v6/codebook").HandlerFunc(api.Handle).Methods(http.MethodGet, http.MethodOptions)
-	r.PathPrefix("/v6/query").HandlerFunc(api.Handle).Methods(http.MethodGet, http.MethodOptions)
+	r.PathPrefix("/v6/datasets").Handler(auth(api.Handler())).Methods(http.MethodGet)
+	r.PathPrefix("/v6/datasets").HandlerFunc(api.preflightRequestHandler).Methods(http.MethodOptions)
+
+	r.PathPrefix("/v6/codebook").Handler(auth(api.Handler())).Methods(http.MethodGet)
+	r.PathPrefix("/v6/codebook").HandlerFunc(api.preflightRequestHandler).Methods(http.MethodOptions)
+
+	r.PathPrefix("/v6/query").Handler(auth(api.Handler())).Methods(http.MethodGet)
+	r.PathPrefix("/v6/query").HandlerFunc(api.preflightRequestHandler).Methods(http.MethodOptions)
 	return api
 }
 
-func (api *API) Handle(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	url := r.URL.String()
+func (api *API) preflightRequestHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", http.MethodGet)
+	w.WriteHeader(http.StatusNoContent)
+}
 
-	entity, err := api.Client.GetData(ctx, url)
-	if err != nil {
-		errEntity, status := getErrorResponse(ctx, err)
-		WriteBody(ctx, w, errEntity, status)
-		return
-	}
+func (api *API) Handler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		url := r.URL.String()
 
-	WriteBody(ctx, w, entity, http.StatusOK)
+		entity, err := api.Client.GetData(ctx, url)
+		if err != nil {
+			errEntity, status := getErrorResponse(ctx, err)
+			WriteBody(ctx, w, errEntity, status)
+			return
+		}
+
+		WriteBody(ctx, w, entity, http.StatusOK)
+	})
 }
 
 func getErrorResponse(ctx context.Context, err error) (SimpleEntity, int) {

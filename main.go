@@ -39,10 +39,10 @@ func run() error {
 	}
 
 	r := mux.NewRouter()
-	app := api.Setup(nil, r, ftbCli)
-
 	authToken := cfg.GetAuthToken()
-	withMiddleware := alice.New(middleware.RequestID, middleware.Auth(authToken)).Then(app.Router)
+
+	app := api.Setup(nil, r,  middleware.Auth(authToken), ftbCli)
+	withMiddleware := alice.New(middleware.RequestID).Then(app.Router)
 
 	log.Event(nil, "starting ftb proxy api", log.INFO, log.Data{"port": cfg.BindAddr})
 	return http.ListenAndServe(cfg.BindAddr, withMiddleware)
