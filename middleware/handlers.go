@@ -1,9 +1,11 @@
-package auth
+package middleware
 
 import (
 	"net/http"
 
 	"github.com/ONSdigital/dp-census-alpha-api-proxy/api"
+	dphttp "github.com/ONSdigital/dp-net/http"
+	"github.com/ONSdigital/go-ns/common"
 	"github.com/ONSdigital/log.go/log"
 )
 
@@ -11,10 +13,16 @@ const (
 	authHeader = "Authorization"
 )
 
-func Handler(token string) func(http.HandlerFunc) http.HandlerFunc {
+func RequestID(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := common.WithRequestId(r.Context(), dphttp.NewRequestID(16))
+		h.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
 
-	return func(h http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
+func Auth(token string) func(http.Handler) http.Handler {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			callerToken := r.Header.Get(authHeader)
 
@@ -32,6 +40,6 @@ func Handler(token string) func(http.HandlerFunc) http.HandlerFunc {
 
 			log.Event(ctx, "valid credentials provided proceeding with request", log.INFO)
 			h.ServeHTTP(w, r)
-		}
+		})
 	}
 }

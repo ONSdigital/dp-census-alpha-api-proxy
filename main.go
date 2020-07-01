@@ -5,12 +5,13 @@ import (
 	"os"
 
 	"github.com/ONSdigital/dp-census-alpha-api-proxy/api"
-	"github.com/ONSdigital/dp-census-alpha-api-proxy/auth"
 	"github.com/ONSdigital/dp-census-alpha-api-proxy/config"
 	"github.com/ONSdigital/dp-census-alpha-api-proxy/ftb"
+	"github.com/ONSdigital/dp-census-alpha-api-proxy/middleware"
 	dphttp "github.com/ONSdigital/dp-net/http"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
+	"github.com/justinas/alice"
 )
 
 const serviceName = "dp-census-alpha-api-proxy"
@@ -38,9 +39,11 @@ func run() error {
 	}
 
 	r := mux.NewRouter()
+	app := api.Setup(nil, r, ftbCli)
 
-	api.Setup(nil, r, auth.Handler(cfg.GetAuthToken()), ftbCli)
+	authToken := cfg.GetAuthToken()
+	withMiddleware := alice.New(middleware.RequestID, middleware.Auth(authToken)).Then(app.Router)
 
 	log.Event(nil, "starting ftb proxy api", log.INFO, log.Data{"port": cfg.BindAddr})
-	return http.ListenAndServe(cfg.BindAddr, r)
+	return http.ListenAndServe(cfg.BindAddr, withMiddleware)
 }

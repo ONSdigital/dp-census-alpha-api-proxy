@@ -3,7 +3,6 @@ package ftb
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -60,8 +59,6 @@ func handleErrorResponse(resp *http.Response) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Println(string(b))
 
 	status := http.StatusInternalServerError
 	message := "internal server error"
