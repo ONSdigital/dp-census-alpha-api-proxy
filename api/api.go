@@ -47,6 +47,7 @@ func Setup(ctx context.Context, r *mux.Router, auth Authenticator, client FTBCli
 func (api *API) preflightRequestHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", http.MethodGet)
+	w.Header().Set("Access-Control-Allow-Headers", "Authorization")
 	w.WriteHeader(http.StatusNoContent)
 }
 

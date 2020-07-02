@@ -4,6 +4,13 @@ api proxy for the census alpha
 
 ### Getting started
 
+* Decrypt the auth token using the ons-develop gpg key and add an an env var.
+  ```
+  gpg -d token.txt.asc
+  
+  # Add to your .bash_profile or .zshrc depending on which you are using.
+  export AUTH_PROXY_TOKEN=<TOKEN_VALUE>
+  ```
 * Run `make debug`
 
 ### Dependencies
