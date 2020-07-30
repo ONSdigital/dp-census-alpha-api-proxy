@@ -13,11 +13,11 @@ type Dataset struct {
 }
 
 type Codebook struct {
-	Dataset  Dataset             `json:"dataset"`
-	CodeBook []CodebookDimension `json:"codebook"`
+	Dataset  Dataset     `json:"dataset"`
+	CodeBook []Dimension `json:"codebook"`
 }
 
-type CodebookDimension struct {
+type Dimension struct {
 	Name         string   `json:"name"`
 	Codes        []string `json:"codes"`
 	Label        string   `json:"label"`
@@ -26,7 +26,7 @@ type CodebookDimension struct {
 	MapFromCodes []string `json:"mapFromCodes"`
 }
 
-func (c *Codebook) GetDimension(name string) *CodebookDimension {
+func (c *Codebook) GetDimension(name string) *Dimension {
 	if c.CodeBook == nil || len(c.CodeBook) == 0 {
 		return nil
 	}
