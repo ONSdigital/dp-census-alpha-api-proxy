@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/ONSdigital/dp-census-alpha-api-proxy/cantabular"
+	"github.com/ONSdigital/dp-census-alpha-api-proxy/config"
 	hierarchy "github.com/ONSdigital/dp-hierarchy-api/models"
+	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 )
 
@@ -45,18 +48,9 @@ func getHierarchyLevel(dataset, rootDim string, cb *cantabular.Codebook) *hierar
 			Label:        dim.Labels[i],
 			NoOfChildren: int64(index.Count),
 			Links: map[string]hierarchy.Link{
-				"code": {
-					ID:   code,
-					HRef: fmt.Sprintf("http://localhost:10100/v6/datasets/%s/hierarchies/%s/%s", dataset, dim.Name, code),
-				},
-				"self": {
-					ID:   dim.Name,
-					HRef: fmt.Sprintf("http://localhost:10100/v6/datasets/%s/hierarchies/%s", dataset, dim.Name),
-				},
-				"children": {
-					ID:   dim.MapFrom[0],
-					HRef: fmt.Sprintf("http://localhost:10100/v6/datasets/%s/hierarchies/%s", dataset, dim.MapFrom[0]),
-				},
+				"code":     newLink(code, fmt.Sprintf("/v6/datasets/%s/hierarchies/%s/code/%s", dataset, dim.Name, code)),
+				"self":     newLink(dim.Name, fmt.Sprintf("/v6/datasets/%s/hierarchies/%s", dataset, dim.Name)),
+				"children": newLink(dim.MapFrom[0], fmt.Sprintf("/v6/datasets/%s/hierarchies/%s", dataset, dim.MapFrom[0])),
 			},
 			HasData: found,
 		}
@@ -129,10 +123,7 @@ func getHierarchyEntry(dataset, dimensionCode string, rootDim *cantabular.Dimens
 				Label:        descendentCode,
 				NoOfChildren: 0,
 				Links: map[string]hierarchy.Link{
-					"code": {
-						ID:   descendentCode,
-						HRef: fmt.Sprintf("http://localhost:10100/v6/datasets/%s/hierarchies/%s/%s", dataset, childName, descendentCode),
-					},
+					"code": newLink(descendentCode, fmt.Sprintf("/v6/datasets/%s/hierarchies/%s/code/%s", dataset, childName, descendentCode)),
 				},
 				HasData: descendentsExist,
 			}
@@ -161,7 +152,13 @@ func (api *API) BuildFullHierarchy() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		dataset := mux.Vars(r)["dataset"]
-		dimensionName := mux.Vars(r)["dimension"]
+		dimensionName := mux.Vars(r)["name"]
+
+		depth, err := strconv.Atoi(r.URL.Query().Get("depth"))
+		if err != nil {
+			log.Event(ctx, "invalid depth provided applying default", log.WARN)
+			depth = 2 // default to a sensible value
+		}
 
 		codebook, err := api.Store.GetDatasetCodebook(context.Background(), dataset)
 		if err != nil {
@@ -171,7 +168,15 @@ func (api *API) BuildFullHierarchy() http.Handler {
 		}
 
 		rootDimension := codebook.GetDimension(dimensionName)
-		h := cantabular.BuildHierarchyFrom(rootDimension, codebook)
+		h := cantabular.BuildHierarchyFrom(rootDimension, codebook, depth)
 		WriteBody(ctx, w, h, http.StatusOK)
 	})
+}
+
+func newLink(id, path string) hierarchy.Link {
+	cfg, _ := config.Get()
+	return hierarchy.Link{
+		ID:   id,
+		HRef: fmt.Sprintf("http://%s%s%s", cfg.IPAddr, cfg.BindAddr, path),
+	}
 }

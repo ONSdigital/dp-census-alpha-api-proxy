@@ -12,6 +12,7 @@ type Config struct {
 	BindAddr                string `envconfig:"BIND_ADDR"`
 	AuthToken               string `envconfig:"AUTH_TOKEN" json:"-"`
 	FlexibleTableBuilderURL string `envconfig:"FTB_URL"`
+	IPAddr                  string `envconfig:"IP_ADDR"`
 }
 
 var cfg *Config
@@ -27,6 +28,7 @@ func Get() (*Config, error) {
 		BindAddr:                ":10100",
 		AuthToken:               "",
 		FlexibleTableBuilderURL: "http://localhost:8491",
+		IPAddr:                  "127.0.0.1",
 	}
 
 	err := envconfig.Process("", cfg)

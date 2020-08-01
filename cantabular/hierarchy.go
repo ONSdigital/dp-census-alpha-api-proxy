@@ -1,7 +1,5 @@
 package cantabular
 
-const maxDepth = 2
-
 type Hierarchy struct {
 	Label    string
 	Children []*Node
@@ -20,7 +18,7 @@ type Index struct {
 	Count int
 }
 
-func BuildHierarchyFrom(rootDim *Dimension, cb *Codebook) *Hierarchy {
+func BuildHierarchyFrom(rootDim *Dimension, cb *Codebook, maxDepth int) *Hierarchy {
 	h := &Hierarchy{
 		Label:    rootDim.Name,
 		Children: make([]*Node, 0),
@@ -31,7 +29,7 @@ func BuildHierarchyFrom(rootDim *Dimension, cb *Codebook) *Hierarchy {
 			Type:     rootDim.Name,
 			Name:     rootDim.Labels[i],
 			Code:     code,
-			Children: rootDim.GetChildrenForOption(code, cb, 1),
+			Children: rootDim.GetChildrenForOption(code, cb, maxDepth, 1),
 		}
 
 		h.Children = append(h.Children, n)
@@ -40,7 +38,7 @@ func BuildHierarchyFrom(rootDim *Dimension, cb *Codebook) *Hierarchy {
 	return h
 }
 
-func (d *Dimension) GetChildrenForOption(parentCode string, cb *Codebook, depth int) []*Node {
+func (d *Dimension) GetChildrenForOption(parentCode string, cb *Codebook, maxDepth, depth int) []*Node {
 	children := make([]*Node, 0)
 	if depth >= maxDepth {
 		return children
@@ -60,7 +58,7 @@ func (d *Dimension) GetChildrenForOption(parentCode string, cb *Codebook, depth 
 			Type:     childDim.Name,
 			Name:     childDim.Labels[i],
 			Code:     childDim.Codes[i],
-			Children: childDim.GetChildrenForOption(childDim.Codes[i], cb, depth),
+			Children: childDim.GetChildrenForOption(childDim.Codes[i], cb, maxDepth, depth),
 		})
 	}
 	return children

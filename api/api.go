@@ -40,8 +40,8 @@ func Setup(ctx context.Context, r *mux.Router, auth Authenticator, client DataSt
 	r.Handle("/v6/datasets/{dataset}/dimensions/{name}/codes", auth(api.GetDatasetDimensionCodes())).Methods(http.MethodGet)
 
 	r.Handle("/v6/datasets/{dataset}/hierarchies/{name}", auth(api.GetHierarchy())).Methods(http.MethodGet)
-	r.Handle("/v6/datasets/{dataset}/hierarchies/{name}/{code}", auth(api.GetHierarchyForCode())).Methods(http.MethodGet)
-	r.Handle("/v6/datasets/{dataset}/hierarchy/{dimension}/full", auth(api.BuildFullHierarchy())).Methods(http.MethodGet)
+	r.Handle("/v6/datasets/{dataset}/hierarchies/{name}/full", auth(api.BuildFullHierarchy())).Methods(http.MethodGet)
+	r.Handle("/v6/datasets/{dataset}/hierarchies/{name}/code/{code}", auth(api.GetHierarchyForCode())).Methods(http.MethodGet)
 
 	r.PathPrefix("/v6/datasets").Handler(auth(api.Handler())).Methods(http.MethodGet)
 	r.PathPrefix("/v6/datasets").HandlerFunc(api.preflightRequestHandler).Methods(http.MethodOptions)
