@@ -1,8 +1,9 @@
-package ftb
+package cantabular
 
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -54,6 +55,43 @@ func (c *Client) GetData(ctx context.Context, url string) (Entity, error) {
 	return entity, nil
 }
 
+func (c *Client) GetDatasetCodebook(ctx context.Context, dataset string) (*Codebook, error) {
+	url := fmt.Sprintf("%s/v6/codebook/%s", c.Host, dataset)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var codebookResp Codebook
+	err = c.execGet(ctx, req, &codebookResp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &codebookResp, err
+}
+
+func (c *Client) execGet(ctx context.Context, r *http.Request, entity interface{}) error {
+	resp, err := c.HttpCli.Do(ctx, r)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return handleErrorResponse(resp)
+	}
+
+	err = json.NewDecoder(resp.Body).Decode(entity)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func handleErrorResponse(resp *http.Response) error {
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -63,7 +101,7 @@ func handleErrorResponse(resp *http.Response) error {
 	status := http.StatusInternalServerError
 	message := "internal server error"
 
-	if resp.StatusCode > 399 && resp.StatusCode  < 500 {
+	if resp.StatusCode > 399 && resp.StatusCode < 500 {
 		status = resp.StatusCode
 		message = string(b)
 	}

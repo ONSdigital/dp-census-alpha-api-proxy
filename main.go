@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/ONSdigital/dp-census-alpha-api-proxy/api"
+	"github.com/ONSdigital/dp-census-alpha-api-proxy/cantabular"
 	"github.com/ONSdigital/dp-census-alpha-api-proxy/config"
-	"github.com/ONSdigital/dp-census-alpha-api-proxy/ftb"
 	"github.com/ONSdigital/dp-census-alpha-api-proxy/middleware"
 	dphttp "github.com/ONSdigital/dp-net/http"
 	"github.com/ONSdigital/log.go/log"
@@ -33,7 +33,7 @@ func run() error {
 
 	log.Event(nil, "application configuration", log.INFO, log.Data{"values": cfg})
 
-	ftbCli := &ftb.Client{
+	datastore := &cantabular.Client{
 		Host:    cfg.FlexibleTableBuilderURL,
 		HttpCli: dphttp.NewClient(),
 	}
@@ -41,7 +41,7 @@ func run() error {
 	r := mux.NewRouter()
 	authToken := cfg.GetAuthToken()
 
-	app := api.Setup(nil, r,  middleware.Auth(authToken), ftbCli)
+	app := api.Setup(nil, r, middleware.Auth(authToken), datastore)
 	withMiddleware := alice.New(middleware.RequestID).Then(app.Router)
 
 	log.Event(nil, "starting ftb proxy api", log.INFO, log.Data{"port": cfg.BindAddr})
