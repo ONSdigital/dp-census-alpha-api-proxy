@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/ONSdigital/dp-census-alpha-api-proxy/cantabular"
+	filterModel "github.com/ONSdigital/dp-filter-api/models"
 	"github.com/ONSdigital/dp-code-list-api/models"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
@@ -35,9 +37,12 @@ func Setup(ctx context.Context, r *mux.Router, auth Authenticator, client DataSt
 		Router: r,
 	}
 
+	r.Handle("/v6/datasets/{dataset}/filter/dimensions/{name}/options", auth(api.GetFilterDimensions())).Methods(http.MethodGet)
+
 	r.Handle("/v6/datasets/{dataset}/dimensions", auth(api.GetDatasetDimensions())).Methods(http.MethodGet)
 	r.Handle("/v6/datasets/{dataset}/dimensions/{name}", auth(api.GetDatasetDimension())).Methods(http.MethodGet)
 	r.Handle("/v6/datasets/{dataset}/dimensions/{name}/codes", auth(api.GetDatasetDimensionCodes())).Methods(http.MethodGet)
+	r.Handle("/v6/datasets/{dataset}/dimensions/{name}/index/{index}", auth(api.GetDatasetDimensionByIndex())).Methods(http.MethodGet)
 
 	r.Handle("/v6/datasets/{dataset}/hierarchies/{name}", auth(api.GetHierarchy())).Methods(http.MethodGet)
 	r.Handle("/v6/datasets/{dataset}/hierarchies/{name}/full", auth(api.BuildFullHierarchy())).Methods(http.MethodGet)
@@ -172,6 +177,81 @@ func mapToCMDCodeList(dimension *cantabular.Dimension) *models.CodeResults {
 		TotalCount: length,
 	}
 }
+
+func (api *API) GetFilterDimensions() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		dataset := mux.Vars(r)["dataset"]
+		dimensionName := mux.Vars(r)["name"]
+
+		codebook, err := api.Store.GetDatasetCodebook(ctx, dataset)
+		if err != nil {
+			errEntity, status := getErrorResponse(ctx, err)
+			WriteBody(ctx, w, errEntity, status)
+			return
+		}
+
+
+		dim := codebook.GetDimension(dimensionName)
+
+		var options []*filterModel.PublicDimensionOption
+		for _, code := range dim.Codes {
+			options = append(options, &filterModel.PublicDimensionOption{
+				Links:  nil,
+				Option: code,
+			})
+		}
+
+		WriteBody(ctx, w, options, http.StatusOK)
+	})
+}
+
+func (api *API) GetDatasetDimensionByIndex() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		dataset := mux.Vars(r)["dataset"]
+		dimension := mux.Vars(r)["name"]
+
+		index, err := strconv.Atoi(mux.Vars(r)["index"])
+		if err != nil {
+			WriteBody(ctx, w, SimpleEntity{"invalid dimension index"}, http.StatusBadRequest)
+			return
+		}
+
+		codebook, err := api.Store.GetDatasetCodebook(ctx, dataset)
+		if err != nil {
+			errEntity, status := getErrorResponse(ctx, err)
+			WriteBody(ctx, w, errEntity, status)
+			return
+		}
+
+		dim := codebook.GetDimension(dimension)
+		if dim == nil {
+			WriteBody(ctx, w, SimpleEntity{Message: "not found"}, http.StatusNotFound)
+			return
+		}
+
+		if index < 0 || index > len(dim.Codes) {
+			WriteBody(ctx, w, SimpleEntity{"invalid dimension index"}, http.StatusBadRequest)
+			return
+		}
+
+		code := dim.Codes[index]
+		label := code
+		if dim.Labels != nil && len(dim.Labels) > index {
+			label = code
+		}
+
+		d := DimensionResponse{
+			Index: index,
+			Name:  code,
+			Code:  label,
+		}
+
+		WriteBody(ctx, w, d, http.StatusOK)
+	})
+}
+
 
 func getErrorResponse(ctx context.Context, err error) (SimpleEntity, int) {
 	log.Event(ctx, "returning http error response", log.ERROR, log.Error(err))
