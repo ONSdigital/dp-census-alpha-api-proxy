@@ -48,9 +48,9 @@ func getHierarchyLevel(dataset, rootDim string, cb *cantabular.Codebook) *hierar
 			Label:        dim.Labels[i],
 			NoOfChildren: int64(index.Count),
 			Links: map[string]hierarchy.Link{
-				"code":     newLink(code, fmt.Sprintf("/v6/datasets/%s/hierarchies/%s/code/%s", dataset, dim.Name, code)),
-				"self":     newLink(dim.Name, fmt.Sprintf("/v6/datasets/%s/hierarchies/%s", dataset, dim.Name)),
-				"children": newLink(dim.MapFrom[0], fmt.Sprintf("/v6/datasets/%s/hierarchies/%s", dataset, dim.MapFrom[0])),
+				"code":     newLink(code, fmt.Sprintf("/v8/datasets/%s/hierarchies/%s/code/%s", dataset, dim.Name, code)),
+				"self":     newLink(dim.Name, fmt.Sprintf("/v8/datasets/%s/hierarchies/%s", dataset, dim.Name)),
+				"children": newLink(dim.MapFrom[0], fmt.Sprintf("/v8/datasets/%s/hierarchies/%s", dataset, dim.MapFrom[0])),
 			},
 			HasData: found,
 		}
@@ -123,7 +123,7 @@ func getHierarchyEntry(dataset, dimensionCode string, rootDim *cantabular.Dimens
 				Label:        descendentCode,
 				NoOfChildren: 0,
 				Links: map[string]hierarchy.Link{
-					"code": newLink(descendentCode, fmt.Sprintf("/v6/datasets/%s/hierarchies/%s/code/%s", dataset, childName, descendentCode)),
+					"code": newLink(descendentCode, fmt.Sprintf("/v8/datasets/%s/hierarchies/%s/code/%s", dataset, childName, descendentCode)),
 				},
 				HasData: descendentsExist,
 			}

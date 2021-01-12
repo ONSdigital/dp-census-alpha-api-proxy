@@ -17,7 +17,7 @@ debug:
 
 .PHONY: ping
 ping:
-	curl -i -H "Authorization: Bearer ${AUTH_PROXY_TOKEN}" "http://localhost:${BIND_ADDR}/v6/datasets"
+	curl -i -H "Authorization: Bearer ${AUTH_PROXY_TOKEN}" "http://localhost:${BIND_ADDR}/v8/datasets"
 
 .PHONY: container
 container:

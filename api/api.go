@@ -8,8 +8,8 @@ import (
 	"strconv"
 
 	"github.com/ONSdigital/dp-census-alpha-api-proxy/cantabular"
-	filterModel "github.com/ONSdigital/dp-filter-api/models"
 	"github.com/ONSdigital/dp-code-list-api/models"
+	filterModel "github.com/ONSdigital/dp-filter-api/models"
 	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 )
@@ -37,25 +37,25 @@ func Setup(ctx context.Context, r *mux.Router, auth Authenticator, client DataSt
 		Router: r,
 	}
 
-	r.Handle("/v6/datasets/{dataset}/filter/dimensions/{name}/options", auth(api.GetFilterDimensions())).Methods(http.MethodGet)
+	r.Handle("/v8/datasets/{dataset}/filter/dimensions/{name}/options", auth(api.GetFilterDimensions())).Methods(http.MethodGet)
 
-	r.Handle("/v6/datasets/{dataset}/dimensions", auth(api.GetDatasetDimensions())).Methods(http.MethodGet)
-	r.Handle("/v6/datasets/{dataset}/dimensions/{name}", auth(api.GetDatasetDimension())).Methods(http.MethodGet)
-	r.Handle("/v6/datasets/{dataset}/dimensions/{name}/codes", auth(api.GetDatasetDimensionCodes())).Methods(http.MethodGet)
-	r.Handle("/v6/datasets/{dataset}/dimensions/{name}/index/{index}", auth(api.GetDatasetDimensionByIndex())).Methods(http.MethodGet)
+	r.Handle("/v8/datasets/{dataset}/dimensions", auth(api.GetDatasetDimensions())).Methods(http.MethodGet)
+	r.Handle("/v8/datasets/{dataset}/dimensions/{name}", auth(api.GetDatasetDimension())).Methods(http.MethodGet)
+	r.Handle("/v8/datasets/{dataset}/dimensions/{name}/codes", auth(api.GetDatasetDimensionCodes())).Methods(http.MethodGet)
+	r.Handle("/v8/datasets/{dataset}/dimensions/{name}/index/{index}", auth(api.GetDatasetDimensionByIndex())).Methods(http.MethodGet)
 
-	r.Handle("/v6/datasets/{dataset}/hierarchies/{name}", auth(api.GetHierarchy())).Methods(http.MethodGet)
-	r.Handle("/v6/datasets/{dataset}/hierarchies/{name}/full", auth(api.BuildFullHierarchy())).Methods(http.MethodGet)
-	r.Handle("/v6/datasets/{dataset}/hierarchies/{name}/code/{code}", auth(api.GetHierarchyForCode())).Methods(http.MethodGet)
+	r.Handle("/v8/datasets/{dataset}/hierarchies/{name}", auth(api.GetHierarchy())).Methods(http.MethodGet)
+	r.Handle("/v8/datasets/{dataset}/hierarchies/{name}/full", auth(api.BuildFullHierarchy())).Methods(http.MethodGet)
+	r.Handle("/v8/datasets/{dataset}/hierarchies/{name}/code/{code}", auth(api.GetHierarchyForCode())).Methods(http.MethodGet)
 
-	r.PathPrefix("/v6/datasets").Handler(auth(api.Handler())).Methods(http.MethodGet)
-	r.PathPrefix("/v6/datasets").HandlerFunc(api.preflightRequestHandler).Methods(http.MethodOptions)
+	r.PathPrefix("/v8/datasets").Handler(auth(api.Handler())).Methods(http.MethodGet)
+	r.PathPrefix("/v8/datasets").HandlerFunc(api.preflightRequestHandler).Methods(http.MethodOptions)
 
-	r.PathPrefix("/v6/codebook").Handler(auth(api.Handler())).Methods(http.MethodGet)
-	r.PathPrefix("/v6/codebook").HandlerFunc(api.preflightRequestHandler).Methods(http.MethodOptions)
+	r.PathPrefix("/v8/codebook").Handler(auth(api.Handler())).Methods(http.MethodGet)
+	r.PathPrefix("/v8/codebook").HandlerFunc(api.preflightRequestHandler).Methods(http.MethodOptions)
 
-	r.PathPrefix("/v6/query").Handler(auth(api.Handler())).Methods(http.MethodGet)
-	r.PathPrefix("/v6/query").HandlerFunc(api.preflightRequestHandler).Methods(http.MethodOptions)
+	r.PathPrefix("/v8/query").Handler(auth(api.Handler())).Methods(http.MethodGet)
+	r.PathPrefix("/v8/query").HandlerFunc(api.preflightRequestHandler).Methods(http.MethodOptions)
 	return api
 }
 
@@ -191,7 +191,6 @@ func (api *API) GetFilterDimensions() http.Handler {
 			return
 		}
 
-
 		dim := codebook.GetDimension(dimensionName)
 
 		var options []*filterModel.PublicDimensionOption
@@ -251,7 +250,6 @@ func (api *API) GetDatasetDimensionByIndex() http.Handler {
 		WriteBody(ctx, w, d, http.StatusOK)
 	})
 }
-
 
 func getErrorResponse(ctx context.Context, err error) (SimpleEntity, int) {
 	log.Event(ctx, "returning http error response", log.ERROR, log.Error(err))

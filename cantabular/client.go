@@ -56,7 +56,7 @@ func (c *Client) GetData(ctx context.Context, url string) (Entity, error) {
 }
 
 func (c *Client) GetDatasetCodebook(ctx context.Context, dataset string) (*Codebook, error) {
-	url := fmt.Sprintf("%s/v6/codebook/%s", c.Host, dataset)
+	url := fmt.Sprintf("%s/v8/codebook/%s", c.Host, dataset)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
